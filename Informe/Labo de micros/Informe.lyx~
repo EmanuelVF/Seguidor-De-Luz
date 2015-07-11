@@ -1,0 +1,297 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\float_placement H
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2cm
+\topmargin 2cm
+\rightmargin 2cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section
+Diseño del control digital
+\end_layout
+
+\begin_layout Standard
+Para implementar el controlador discreto del sistema se utilizó la placa
+ de desarrollo FRDM-K64F.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename Imagenes/31958-FRDM-K64F_BDTN.jpg
+	width 50col%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+FRDM-K64F
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Para implementar el control resultaron necesarias el diseño de los drivers
+ de bajo nivel de los siguientes subsistemas:
+\end_layout
+
+\begin_layout Itemize
+Analog to Digital Converter (ADC)
+\end_layout
+
+\begin_layout Itemize
+Pulse-Width Modulation (FTM)
+\end_layout
+
+\begin_layout Itemize
+General Purpose Input/Output (GPIO)
+\end_layout
+
+\begin_layout Itemize
+Timer (SysTick)
+\end_layout
+
+\begin_layout Itemize
+Universal Asynchronous Receiver-Transmitter (UART)
+\end_layout
+
+\begin_layout Standard
+Además por motivos de modularización se decidieron implementar dos drivers
+ de mediano nivel los cuales proveen acceso al control de cada uno de los
+ motores utilizados, donde cada uno representa un eje de rotación: azimutal
+ o elevación.
+\end_layout
+
+\begin_layout Itemize
+Azimutal (Quanser)
+\end_layout
+
+\begin_layout Itemize
+Elevación (LDR)
+\end_layout
+
+\begin_layout Subsection
+Diagrama del Funcionamiento del Programa
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Diagrama del Funcionamiento del Programa
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Detalle de los Drivers
+\end_layout
+
+\begin_layout Subsubsection*
+Analog to Digital Converter (ADC)
+\end_layout
+
+\begin_layout Standard
+Este driver se encarga de proveer al control con las mediciones de luz mediante
+ el sensado de la tensión en los cuatro LDRs.
+ Además es necesario para producir la realimentación de la velocidad en
+ el quanser ya que sensa la misma por medio del sensado de la tensión inducida
+ por la velocidad de giro del motor, es decir se mide la salida de un tacómetro
+ que posee el mismo.
+ 
+\end_layout
+
+\begin_layout Standard
+Se decidió realizar su implementación integramente por interrupciones para
+ evitar el bloqueo del sistema mientras se realizan las mediciones.
+ Se proveen al usuario funciones que permiten iniciar una conversión, informarse
+ si la misma ha sido concluida y obtener el valor de la conversión.
+\end_layout
+
+\begin_layout Standard
+Para que el programa resulte modular se decidió utilizar dos módulos de
+ ADC, uno para el driver Quanser y otro para el driver LDR.
+ Se requieren dos canales para realizar la medición del tacómetro y cuatro
+ para sensar cada una de las LDR.
+\end_layout
+
+\begin_layout Subsubsection*
+Pulse-Width Modulation (FTM)
+\end_layout
+
+\begin_layout Standard
+Para controlar ambos motores se requiere un PWM en su señal de control.
+ Las mismas son generadas utilizando el módulo FlexTimer de la Kinetis utilizand
+o un módulo de PWM para cada uno de los motores.
+\end_layout
+
+\begin_layout Standard
+El control de la velocidad del quanser se encuentra definido por la frecuencia
+ a la que actúa el PWM.
+ En cambio en el caso del servo utilizado en "Elevación" la frecuencia utilizada
+ define la posición del mismo.
+\end_layout
+
+\begin_layout Subsubsection*
+General Purpose Input/Output (GPIO)
+\end_layout
+
+\begin_layout Standard
+El módulo GPIO es requerido para realizar el control de la dirección del
+ puente H utilizado para controlar el Quanser.
+ Se requieren dos de los mismos en modo Output los cuales tomaran valor
+ "1" o "0" dependiendo la dirección de los mismos.
+ Como los mismos se encontraran siempre opuestos, se decidió implementar
+ el modo Toggle para su funcionamiento.
+\end_layout
+
+\begin_layout Subsubsection*
+Timer (SysTick)
+\end_layout
+
+\begin_layout Standard
+Se utilizó este driver para proveer al sistema con una interrupción periódica
+ la cual determina la frecuencia de sampleo de los LDR y el tacómetro para
+ el sistema de control digital.
+ La precisión y tiempo de esta interrupción resulta importante debido al
+ hecho que si la velocidad de realimentación cambia se verá modificada la
+ respuesta del sistema.
+\end_layout
+
+\begin_layout Subsubsection*
+Universal Asynchronous Receiver-Transmitter (UART)
+\end_layout
+
+\begin_layout Standard
+Para lograr proveer una interfaz con el usuario, intercambiar datos con
+ una computadora y modificar los parámetros de realimentación del sistema
+ se decidió implementar una comunicación "Full-Dúplex" por medio del uso
+ de un módulo UART que se comunica por medio de interrupciones con Matlab
+ con un BaudRate de 128kbps.
+\end_layout
+
+\begin_layout Subsubsection*
+Elevación (LDR)
+\end_layout
+
+\begin_layout Standard
+Este driver provee la realimentación del Servo que controla la rotación
+ en "Elevación".
+ El mismo requiere los drivers de bajo nivel FTM y ADC.
+ Se encarga de indicar cuando sensar cada uno de los LDR además de ajustar
+ la frecuencia del PWM de acuerdo a la diferencia de sensado entre las medicione
+s.
+ Espera que se hayan realizado las cuatro mediciones para actuar.
+ Provee funciones para obtener el valor de cada una de las mediciones de
+ los LDR.
+\end_layout
+
+\begin_layout Subsubsection*
+Azimutal (Quanser)
+\end_layout
+
+\begin_layout Standard
+Este driver se encarga del control del Quanser.
+ Utiliza la información de las LDR por medio de las funciones provistas
+ por su driver.
+ Además se encarga de sensar el tacómetro para producir la realimentación
+ de la velocidad por medio de un controlador proporcional, mediciones que
+ obtiene utilizando el driverde ADC.
+ Finalmente ajusta la dirección del movimiento utilizando el driver de GPIO.
+\end_layout
+
+\end_body
+\end_document
